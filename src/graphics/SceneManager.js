@@ -289,6 +289,16 @@ export class SceneManager {
         }
     }
 
+    setEnvironment(config) {
+        if (config.weather === 'sunny') {
+            this.scene.fog.density = 0.001;
+            this.sun.intensity = 1.2;
+        } else if (config.weather === 'foggy') {
+            this.scene.fog.density = 0.01;
+            this.sun.intensity = 0.5;
+        }
+    }
+
     setBallType(ballData) {
         if (!this.ballMesh) return;
         this.ballMesh.material.color.setHex(ballData.color);

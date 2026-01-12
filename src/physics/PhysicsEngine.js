@@ -177,6 +177,12 @@ export class PhysicsEngine {
         this.ball.applyCentralForce(new Ammo.btVector3(dragX, dragY, dragZ));
     }
 
+    setBallProperties(props) {
+        if (!this.ball) return;
+        if (props.restitution !== undefined) this.ball.setRestitution(props.restitution);
+        if (props.friction !== undefined) this.ball.setFriction(props.friction);
+    }
+
     setInitialShot(velocity, spin) {
         if (!this.ball || !this.Ammo) return;
         const Ammo = this.Ammo;

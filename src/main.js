@@ -107,8 +107,15 @@ class AirSwingApp {
         if (config.equippedBall) {
             this.scene.setBallType(config.equippedBall);
             // 물리 속성도 서버에서 온 데이터로 조정
-            // this.physics.ball.setRestitution(config.equippedBall.physicsMod.restitution);
+            if (config.equippedBall.physicsMod) {
+                this.physics.setBallProperties(config.equippedBall.physicsMod);
+            }
             console.log(`아이템 장착됨: ${config.equippedBall.name}`);
+        }
+
+        if (config.env) {
+            this.scene.setEnvironment(config.env);
+            console.log(`환경 설정 적용됨: ${config.env.weather}`);
         }
     }
 
