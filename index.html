@@ -37,6 +37,19 @@
             letter-spacing: -1px;
         }
 
+        .coin-balance {
+            background: #fff9db;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 13px;
+            font-weight: bold;
+            color: #f08c00;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            border: 1px solid #ffe066;
+        }
+
         .search-login {
             background: #f1f3f5;
             padding: 15px;
@@ -187,82 +200,176 @@
         .bottom-nav .item.active {
             color: var(--primary);
         }
+
+        .page {
+            display: none;
+            padding-bottom: 80px;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        .nasmo-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 20px;
+        }
+
+        .nasmo-item {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .nasmo-thumb {
+            width: 100%;
+            height: 100px;
+            background: #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+
+        .stats-table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        .stats-table th,
+        .stats-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
     </style>
 </head>
 
 <body>
     <header>
         <div class="logo">GOLF UNIVERSE</div>
-        <div class="header-icons">💬 🔔</div>
+        <div class="coin-balance">🪙 <span id="coin-amount">1,250</span> G</div>
     </header>
 
-    <div class="search-login">
-        <input type="text" placeholder="화면의 번호를 입력해주세요">
-        <button>스크린로그인</button>
-    </div>
-
-    <div class="nav-grid">
-        <div class="nav-item">📍 매장예약</div>
-        <div class="nav-item">🏪 매장찾기</div>
-        <div class="nav-item">➕ 플러스샵</div>
-    </div>
-
-    <div class="card-container">
-        <div class="round-card">
-            <span class="tag">21.03.19 배틀존</span>
-            <div class="title">골프존카운티 순천 🅿️</div>
-            <div class="score">73 <span>타 (+1)</span></div>
+    <!-- Home Page -->
+    <div id="page-home" class="page active">
+        <div class="search-login">
+            <input type="text" placeholder="화면의 번호를 입력해주세요">
+            <button>스크린로그인</button>
         </div>
-        <div class="btn-group">
-            <button>스코어카드</button>
-            <button>나스모</button>
-        </div>
-    </div>
 
-    <div class="gift-section">
-        <div class="gift-header">
-            <span>➕ 친구에게 선물 어때요?</span>
-            <span style="color:#999; font-size:12px;">더 많은 선물 ></span>
+        <div class="nav-grid">
+            <div class="nav-item" onclick="showPage('page-booking')">📍 매장예약</div>
+            <div class="nav-item" onclick="showPage('page-ranking')">🏆 랭킹</div>
+            <div class="nav-item" onclick="showPage('page-shop')">🏪 스토어</div>
         </div>
-        <div class="friend-list">
-            <div class="friend-item">
-                <div class="friend-avatar"></div>
-                <div style="flex:1"><b>사당로</b> <span style="font-size:11px;color:var(--primary)">🎂 생일</span></div>
-                <div style="color:#999; font-size:12px;">3월 21일 🎁</div>
+
+        <div class="card-container">
+            <div class="round-card">
+                <span class="tag">21.03.19 배틀존</span>
+                <div class="title">골프존카운티 순천 🅿️</div>
+                <div class="score">73 <span>타 (+1)</span></div>
             </div>
-            <div class="friend-item">
-                <div class="friend-avatar"></div>
-                <div style="flex:1"><b>골프왕</b> <span style="font-size:11px;color:var(--primary)">⛳ 알바트로스</span></div>
-                <div style="color:#999; font-size:12px;">3월 20일 🎁</div>
+            <div class="btn-group">
+                <button onclick="showPage('page-stats')">스코어카드</button>
+                <button onclick="showPage('page-nasmo')">나스모</button>
             </div>
         </div>
-    </div>
 
-    <!-- 2. Swing Data Dashboard -->
-    <div class="card-container" style="padding-top:0;">
-        <div style="background:white; border-radius:15px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
-            <h3 style="margin:0 0 15px 0; font-size:16px;">📊 실시간 샷 제원</h3>
-            <div style="display:flex; justify-content:space-between; text-align:center;">
-                <div>
-                    <div style="font-size:12px; color:#888;">비거리</div>
-                    <div id="val-distance" style="font-size:18px; font-weight:bold; color:#005696;">0.0 m</div>
+        <div class="gift-section">
+            <div class="gift-header">
+                <span>➕ 친구에게 선물 어때요?</span>
+                <span style="color:#999; font-size:12px;">더 많은 선물 ></span>
+            </div>
+            <div class="friend-list">
+                <div class="friend-item">
+                    <div class="friend-avatar"></div>
+                    <div style="flex:1"><b>사당로</b> <span style="font-size:11px;color:var(--primary)">🎂 생일</span></div>
+                    <div style="color:#999; font-size:12px;">3월 21일 🎁</div>
                 </div>
-                <div>
-                    <div style="font-size:12px; color:#888;">볼스피드</div>
-                    <div id="val-speed" style="font-size:18px; font-weight:bold;">0.0 m/s</div>
-                </div>
-                <div>
-                    <div style="font-size:12px; color:#888;">발사각</div>
-                    <div id="val-launch" style="font-size:18px; font-weight:bold;">0.0 °</div>
+            </div>
+        </div>
+
+        <!-- Swing Data Dashboard (Injected via JS) -->
+        <div class="card-container" style="padding-top:0;">
+            <div style="background:white; border-radius:15px; padding:20px; box-shadow:0 2px 10px rgba(0,0,0,0.05);">
+                <h3 style="margin:0 0 15px 0; font-size:16px;">📊 실시간 샷 제원</h3>
+                <div style="display:flex; justify-content:space-between; text-align:center;">
+                    <div>
+                        <div style="font-size:12px; color:#888;">비거리</div>
+                        <div id="val-distance" style="font-size:18px; font-weight:bold; color:#005696;">0.0 m</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px; color:#888;">볼스피드</div>
+                        <div id="val-speed" style="font-size:18px; font-weight:bold;">0.0 m/s</div>
+                    </div>
+                    <div>
+                        <div style="font-size:12px; color:#888;">발사각</div>
+                        <div id="val-launch" style="font-size:18px; font-weight:bold;">0.0 °</div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- 1. Remote Controller Tab -->
-    <div class="header" style="background:var(--primary); color:white; padding:20px; text-align:center;">
-        <h1 style="margin:0; font-size:24px; letter-spacing:1px;">GOLF UNIVERSE</h1>
-        <p style="margin:5px 0 0 0; font-size:12px; opacity:0.8;">Premium Mobile Sync v2.0</p>
+    <!-- Nasmo Page -->
+    <div id="page-nasmo" class="page">
+        <h2 style="padding:20px; margin:0;">나스모 (나의 스윙 모션)</h2>
+        <div class="nasmo-grid">
+            <div class="nasmo-item">
+                <div class="nasmo-thumb">▶</div>
+                <div style="padding:10px; font-size:12px;">2024.01.12<br>드라이버 스윙</div>
+            </div>
+            <div class="nasmo-item">
+                <div class="nasmo-thumb">▶</div>
+                <div style="padding:10px; font-size:12px;">2024.01.10<br>아이언 스윙</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Page -->
+    <div id="page-stats" class="page">
+        <h2 style="padding:20px; margin:0;">기록실 (Stats)</h2>
+        <div style="padding:0 20px;">
+            <div class="round-card" style="margin-bottom:10px;">
+                <div class="score" style="font-size:24px;">BEST SCORE: 68 (-4)</div>
+                <div style="font-size:12px; opacity:0.8;">평균 드라이버: 242m</div>
+            </div>
+            <table class="stats-table">
+                <td>78 (+6)</td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- Remote Controller Tab (Always visible float button or special page) -->
+    <div id="page-remote" class="page">
+        <div class="header" style="background:var(--primary); color:white; padding:20px; text-align:center;">
+            <h1 style="margin:0; font-size:24px; letter-spacing:1px;">GOLF UNIVERSE</h1>
+            <p style="margin:5px 0 0 0; font-size:12px; opacity:0.8;">Remote Controller</p>
+        </div>
+        <div class="card-container">
+            <h3 style="margin:0 0 10px 0; font-size:16px;">🎮 리모컨 & 환경설정</h3>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button id="btn-mulligan"
+                    style="padding:15px; background:#fff; border:1px solid #ddd; border-radius:10px;">↺ 멀리건</button>
+                <button id="btn-god-mode"
+                    style="padding:15px; background:linear-gradient(45deg, #FFD700, #FFA500); border:none; border-radius:10px; color:white; font-weight:bold;">⚡
+                    GOD MODE</button>
+                <button id="btn-cam-follow"
+                    style="padding:15px; background:#e3f2fd; border:none; border-radius:10px; color:#005696;">🎥
+                    팔로우캠</button>
+                <button id="btn-cam-top"
+                    style="padding:15px; background:#e3f2fd; border:none; border-radius:10px; color:#005696;">🎥
+                    탑뷰</button>
+            </div>
+        </div>
     </div>
 
     <!-- QR Login Float Button -->
@@ -306,12 +413,25 @@
 
     <!-- 4. Equipment Shop (Already Added) -->
     <div class="bottom-nav">
-        <div class="item active">🏠<br>홈</div>
-        <div class="item">👤<br>프로필</div>
-        <div class="item">🏌️‍♂️<br>골프친구</div>
-        <div class="item">📄<br>피드</div>
-        <div class="item">☰<br>전체서비스</div>
+        <div class="item active" onclick="showPage('page-home')">🏠<br>홈</div>
+        <div class="item" onclick="showPage('page-stats')">👤<br>기록실</div>
+        <div class="item" onclick="showPage('page-nasmo')">🏌️‍♂️<br>나스모</div>
+        <div class="item" onclick="showPage('page-remote')">🎮<br>리모컨</div>
+        <div class="item">☰<br>더보기</div>
     </div>
+
+    <script>
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active');
+
+            document.querySelectorAll('.bottom-nav .item').forEach(item => item.classList.remove('active'));
+            // Simple logic to highlight nav (index based)
+            const navMap = { 'page-home': 0, 'page-stats': 1, 'page-nasmo': 2, 'page-remote': 3 };
+            const index = navMap[pageId];
+            if (index !== undefined) document.querySelectorAll('.bottom-nav .item')[index].classList.add('active');
+        }
+    </script>
 </body>
 
 </html>

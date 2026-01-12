@@ -87,11 +87,38 @@ class MobileApp {
     }
 
     updateDashboard(state) {
-        // 3. Swing Data Dashboard
-        if (state.lastShot) {
-            this.updateElement('val-distance', `${state.lastShot.distance?.toFixed(1)} m`);
-            this.updateElement('val-speed', `${state.lastShot.ballSpeed?.toFixed(1)} m/s`);
-            this.updateElement('val-launch', `${state.lastShot.launchAngle?.toFixed(1)} °`);
+        // The 'state' object from localStorage might now contain a 'type' and 'payload'
+        // to indicate specific events from the game.
+        if (state.type) {
+            switch (state.type) {
+                case 'SHOT_DATA':
+                    const data = state.payload; // Assuming payload contains shot data
+                    // 샷 결과 반영 및 코인 업데이트
+                    this.updateElement('val-distance', `${data.distance?.toFixed(1)} m`);
+                    this.updateElement('val-speed', `${data.ballSpeed?.toFixed(1)} m/s`);
+                    this.updateElement('val-launch', `${data.launchAngle?.toFixed(1)} °`);
+
+                    if (data.rewardCoins) {
+                        let currentCoins = parseInt(localStorage.getItem('g_coins')) || 0;
+                        currentCoins += data.rewardCoins;
+                        localStorage.setItem('g_coins', currentCoins);
+                        // Ensure 'coin-amount' element exists in your HTML
+                        this.updateElement('coin-amount', currentCoins.toLocaleString());
+                    }
+                    break;
+                // Add other cases for different game state types if needed
+                default:
+                    console.log("Unhandled game state type:", state.type, state.payload);
+                    break;
+            }
+        } else {
+            // Fallback for older state structure or general updates
+            // 3. Swing Data Dashboard
+            if (state.lastShot) {
+                this.updateElement('val-distance', `${state.lastShot.distance?.toFixed(1)} m`);
+                this.updateElement('val-speed', `${state.lastShot.ballSpeed?.toFixed(1)} m/s`);
+                this.updateElement('val-launch', `${state.lastShot.launchAngle?.toFixed(1)} °`);
+            }
         }
 
         // 2. Real-time Scorecard
