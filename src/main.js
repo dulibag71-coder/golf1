@@ -77,12 +77,19 @@ class AirSwingApp {
 
             // 3. 비전 엔진 초기화 (MediaPipe Pose)
             this.ui.updateProgress(70, 'AI 스윙 감지 모듈 초기화 중...');
-            await this.vision.init(() => {
-                if (this.state === 'loading') {
-                    console.log('Vision Module Ready');
-                    this.setGameState('ready');
+
+            this.vision.setCallbacks(
+                () => { // onReady
+                    if (this.state === 'loading' || this.state === 'ready' || this.state === 'result') {
+                        this.setGameState('address');
+                    }
+                },
+                (shotData) => { // onShot
+                    this.onShot(shotData);
                 }
-            });
+            );
+
+            await this.vision.init();
 
             this.ui.updateProgress(100, '모든 시스템 준비 완료!');
             this.onInitComplete();
@@ -117,6 +124,7 @@ class AirSwingApp {
 
     handleShotComplete(distance) {
         this.setGameState('ready'); // 다시 대기 상태로
+        this.vision.resetState();   // 다음 샷을 위해 비전 상태 리셋
 
         // 모바일 앱으로 결과 전송
         const shotData = {
@@ -139,7 +147,7 @@ class AirSwingApp {
     onInitComplete() {
         if (this.state !== 'loading') return;
         this.ui.hideLoader();
-        this.setGameState('address');
+        this.setGameState('ready'); // 어드레스 가이드를 띄움
         this.startLoop();
     }
 

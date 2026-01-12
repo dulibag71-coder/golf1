@@ -95,14 +95,15 @@ export class UIManager {
 
     setMode(mode) {
         // pre-swing, flying, result, putting 등 상태에 따른 UI 변경
-        if (mode === 'address') {
+        if (mode === 'ready') {
             this.addressGuide.classList.remove('hidden');
             this.readyStatus.classList.add('hidden');
-        } else if (mode === 'ready') {
+        } else if (mode === 'address') {
             this.addressGuide.classList.add('hidden');
             this.readyStatus.classList.remove('hidden');
             this.playReadySound();
-        } else {
+        }
+        else {
             this.addressGuide.classList.add('hidden');
             this.readyStatus.classList.add('hidden');
         }
