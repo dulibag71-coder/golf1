@@ -32,7 +32,8 @@ class AirSwingApp {
         this.sync.subscribe('caddy_update', (data) => this.audio.setVoice(data.voice));
         this.sync.subscribe('god_mode', (data) => this.onGodMode(data));
         this.sync.subscribe('login_success', (data) => {
-            this.ui.hideQR();
+            this.ui.hideLogin(); // 로그인창 닫기
+            this.setGameState('ready'); // 게임 시작
             this.ui.showNotification(`${data.userId}님 로그인 완료!`);
         });
 
@@ -147,7 +148,7 @@ class AirSwingApp {
     onInitComplete() {
         if (this.state !== 'loading') return;
         this.ui.hideLoader();
-        this.setGameState('ready'); // 어드레스 가이드를 띄움
+        this.state = 'waiting_login'; // 로그인 대기 상태
         this.startLoop();
     }
 
