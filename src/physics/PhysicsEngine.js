@@ -119,7 +119,7 @@ export class PhysicsEngine {
         const pz = origin.z();
 
         // 1. OB 체크 (범위 밖)
-        if (Math.abs(px) > 150 || pz < -500 || pz > 50) {
+        if (Math.abs(px) > 160 || pz < -600 || pz > 100) {
             return 'OB';
         }
 

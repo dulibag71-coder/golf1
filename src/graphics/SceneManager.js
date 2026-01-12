@@ -21,7 +21,8 @@ export class SceneManager {
         this.renderer.shadowMap.enabled = true;
         this.renderer.shadowMap.type = THREE.VSMShadowMap; // 고품질 그림자
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping; // 시네마틱 톤매핑
-        this.renderer.toneMappingExposure = 1.2;
+        this.renderer.toneMappingExposure = 1.0;
+        this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         this.scene = new THREE.Scene();
         this.camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
@@ -45,14 +46,14 @@ export class SceneManager {
         const renderPass = new RenderPass(this.scene, this.camera);
         this.composer.addPass(renderPass);
 
-        // 100...0배 업그레이드: 강력한 블룸 효과 (Glow)
+        // 블룸 효과 조절 (기존 1.2 -> 0.4로 하향하여 눈부심 방지)
         const bloomPass = new UnrealBloomPass(
             new THREE.Vector2(window.innerWidth, window.innerHeight),
-            1.5, 0.4, 0.85
+            0.4, 0.4, 0.85
         );
-        bloomPass.threshold = 0;
-        bloomPass.strength = 1.2; // 강한 빛 번짐
-        bloomPass.radius = 0.5;
+        bloomPass.threshold = 0.7; // 밝은 영역만 번지도록
+        bloomPass.strength = 0.4;
+        bloomPass.radius = 0.2;
         this.composer.addPass(bloomPass);
     }
 
@@ -110,11 +111,11 @@ export class SceneManager {
 
     initLights() {
         // 자연광 (Sky Blue Ambient)
-        const ambient = new THREE.HemisphereLight(0x87ceeb, 0x27ae60, 0.8);
+        const ambient = new THREE.HemisphereLight(0x87ceeb, 0x27ae60, 0.4);
         this.scene.add(ambient);
 
-        // 태양광 (Directional with high intensity)
-        this.sun = new THREE.DirectionalLight(0xffffff, 2.5);
+        // 태양광 (기존 2.5 -> 1.2로 하향)
+        this.sun = new THREE.DirectionalLight(0xffffff, 1.2);
         this.sun.position.set(200, 300, 100);
         this.sun.castShadow = true;
         this.sun.shadow.camera.left = -200;
@@ -133,27 +134,29 @@ export class SceneManager {
         // 배경: 고품질 스카이 박스 대체용 시각적 보정
         this.scene.background = new THREE.Color(0x87ceeb);
 
-        // 지면 베이스 (텍스처링)
-        const planeGeo = new THREE.PlaneGeometry(1000, 1000);
-        const planeMat = new THREE.MeshStandardMaterial({
-            color: 0x1e5631,
-            roughness: 0.8,
-            metalness: 0.1
-        });
-        const plane = new THREE.Mesh(planeGeo, planeMat);
-        plane.rotation.x = -Math.PI / 2;
-        plane.receiveShadow = true;
-        this.scene.add(plane);
+        // 1. 기본 지면: 러프 (Rough)
+        this.createTerrainArea(-200, 200, -600, 100, 0x1e5631, 'ROUGH');
 
-        // 페어웨이 (Fairway)
-        this.createTerrainArea(-15, 15, -400, -50, 0x27ae60, 'FAIRWAY');
+        // 2. 페어웨이 (Fairway)
+        this.createTerrainArea(-30, 30, -500, -40, 0x27ae60, 'FAIRWAY');
 
-        // 벙커 (Bunker)
-        this.createTerrainArea(10, 25, -150, -120, 0xe3c18d, 'BUNKER');
-        this.createTerrainArea(-25, -10, -250, -220, 0xe3c18d, 'BUNKER');
+        // 3. 그린 (Green)
+        this.createTerrainArea(-20, 20, -550, -500, 0x2ecc71, 'GREEN');
 
-        // 워터 해저드 (Water)
-        this.createTerrainArea(-50, 50, -350, -300, 0x0077be, 'WATER');
+        // 4. 해저드 (Water)
+        this.createTerrainArea(-80, 80, -350, -300, 0x3498db, 'WATER');
+
+        // 5. 벙커 (Bunker)
+        this.createTerrainArea(20, 35, -200, -160, 0xe3c18d, 'BUNKER');
+        this.createTerrainArea(-35, -20, -400, -360, 0xe3c18d, 'BUNKER');
+
+        // 6. OB 구역 (경고 빨간선 효과)
+        this.createTerrainArea(-160, -150, -600, 100, 0xff0000, 'OB');
+        this.createTerrainArea(150, 160, -600, 100, 0xff0000, 'OB');
+
+        // 6. OB 구역 표시 (빨간 말뚝 대신 붉은 바닥 경계)
+        this.createTerrainArea(-155, -150, -500, 50, 0xff0000, 'OB');
+        this.createTerrainArea(150, 155, -500, 50, 0xff0000, 'OB');
 
         // 초기 카메라 위치
         this.camera.position.set(0, 1.8, 8);

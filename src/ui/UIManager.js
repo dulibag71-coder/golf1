@@ -19,8 +19,9 @@ export class UIManager {
 
         this.shotResult = document.getElementById('shot-result');
         this.loader = document.getElementById('loader');
-        this.progress = document.getElementById('load-bar');
+        this.loadBar = document.getElementById('load-bar');
         this.loadStatus = document.getElementById('load-status');
+        this.loginOverlay = document.getElementById('login-overlay');
 
         // Rebrand Loader
         if (this.loader) {
@@ -57,7 +58,7 @@ export class UIManager {
     }
 
     updateProgress(percent, statusText) {
-        if (this.progress) this.progress.style.width = `${percent}%`;
+        if (this.loadBar) this.loadBar.style.width = `${percent}%`;
         if (this.loadStatus && statusText) {
             this.loadStatus.innerText = statusText;
         }
@@ -66,7 +67,22 @@ export class UIManager {
     hideLoader() {
         if (this.loader) {
             this.loader.style.opacity = '0';
-            setTimeout(() => this.loader.classList.add('hidden'), 500);
+            setTimeout(() => {
+                this.loader.style.display = 'none';
+                this.showLogin(); // 로딩 끝나면 로그인창 띄움
+            }, 500);
+        }
+    }
+
+    showLogin() {
+        if (this.loginOverlay) {
+            this.loginOverlay.style.display = 'flex';
+        }
+    }
+
+    hideLogin() {
+        if (this.loginOverlay) {
+            this.loginOverlay.style.display = 'none';
         }
     }
 

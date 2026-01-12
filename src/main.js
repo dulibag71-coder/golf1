@@ -56,6 +56,17 @@ class AirSwingApp {
         this.ui.updateProgress(10, '라이브러리 로딩 중...');
 
         try {
+            // 0. 서버에서 게임 설정(아이템 등) 가져오기
+            this.ui.updateProgress(20, '서버 설정 동기화 중...');
+            try {
+                const response = await fetch('/api/game/config');
+                const config = await response.json();
+                console.log('Server Config Loaded:', config);
+                this.applyServerConfig(config);
+            } catch (err) {
+                console.warn('서버 설정 로드 실패, 기본값 사용', err);
+            }
+
             // 1. Ammo.js 비동기 로딩 및 물리 엔진 초기화
             this.ui.updateProgress(30, '물리 엔진 시스템(Ammo.js) 준비 중...');
             await this.physics.init(); // 내부에서 await Ammo() 수행
@@ -81,6 +92,15 @@ class AirSwingApp {
             this.ui.updateProgress(100, '일부 모듈 로드 실패 (Failsafe 실행)');
             // 에러가 발생하더라도 최소한의 렌더링은 가능하도록 처리
             this.onInitComplete();
+        }
+    }
+
+    applyServerConfig(config) {
+        if (config.equippedBall) {
+            this.scene.setBallType(config.equippedBall);
+            // 물리 속성도 서버에서 온 데이터로 조정
+            // this.physics.ball.setRestitution(config.equippedBall.physicsMod.restitution);
+            console.log(`아이템 장착됨: ${config.equippedBall.name}`);
         }
     }
 

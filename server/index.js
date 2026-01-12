@@ -41,6 +41,24 @@ app.get('/api/health', (req, res) => {
 app.post('/api/auth/register', register);
 app.post('/api/auth/login', login);
 
+// Game Configuration (Server-side decision for items/settings)
+app.get('/api/game/config', (req, res) => {
+    // 실제 운영 환경에서는 사용자의 JWT를 확인하여 인벤토리 정보를 반환하겠지만,
+    // 여기서는 '서버에서 결정하는' 로직을 시뮬레이션하기 위해 추천 아이템을 반환합니다.
+    res.json({
+        equippedBall: {
+            id: 'premium_pro_ball',
+            name: '서버 추천: Pro V1x',
+            color: 0xffffff,
+            physicsMod: { restitution: 0.8, friction: 0.2 }
+        },
+        env: {
+            windSpeed: 2.5,
+            weather: 'sunny'
+        }
+    });
+});
+
 // Protected Routes (Example)
 app.get('/api/user/profile', authenticateToken, (req, res) => {
     db.get(`SELECT id, email, skill_level, subscription FROM users WHERE id = ?`, [req.user.id], (err, user) => {

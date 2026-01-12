@@ -148,11 +148,32 @@
         <!-- Loader -->
         <div id="loader">
             <div class="loader-inner">
-                <div class="logo">AIRSWING</div>
+                <div class="logo">GOLF UNIVERSE</div>
                 <div class="bar-container">
                     <div id="load-bar"></div>
                 </div>
-                <p id="load-status">필드 렌더링 중...</p>
+                <p id="load-status">데이터 로드 중...</p>
+            </div>
+        </div>
+
+        <!-- Login Overlay (Hidden by default, shown after loading) -->
+        <div id="login-overlay"
+            style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:none; align-items:center; justify-content:center; z-index:2000;">
+            <div
+                style="background:white; padding:40px; border-radius:20px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5); max-width:400px; width:90%;">
+                <h1 style="color:#00c853; margin-bottom:10px;">GOLF UNIVERSE</h1>
+                <p style="color:#666; margin-bottom:30px;">모바일 앱의 QR 스캐너를 이용하거나<br>아래 코드를 입력해주세요.</p>
+
+                <div style="background:#f8f9fa; padding:20px; border-radius:15px; margin-bottom:20px;">
+                    <div style="font-size:40px; margin-bottom:10px;">📱</div>
+                    <div style="font-size:24px; font-weight:bold; letter-spacing:5px; color:#333;">73 42 19</div>
+                </div>
+
+                <button onclick="document.getElementById('login-overlay').style.display='none'"
+                    style="width:100%; padding:15px; background:#00c853; color:white; border:none; border-radius:10px; font-size:18px; font-weight:bold; cursor:pointer;">
+                    게스트로 시작하기
+                </button>
+                <p style="font-size:12px; color:#999; margin-top:15px;">로그인 시 아이템 연동 및 기록 저장이 가능합니다.</p>
             </div>
         </div>
 
