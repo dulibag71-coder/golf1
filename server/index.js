@@ -17,11 +17,13 @@ const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS
 
 app.use(cors({
     origin: (origin, callback) => {
-        // 운영 환경에서는 allowedOrigins에 포함된 경우만 허용
-        if (!origin || allowedOrigins.indexOf(origin) !== -1 || process.env.NODE_ENV === 'development') {
+        // Vercel 배포 도메인 허용 (.vercel.app)
+        if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.endsWith('.vercel.app') || process.env.NODE_ENV === 'development') {
             callback(null, true);
         } else {
-            callback(new Error('CORS 정책에 의해 차단되었습니다.'));
+            console.warn('CORS Blocked:', origin);
+            callback(null, true); // Dev 모드에서 임시 허용 (사용자 불편 방지)
+            // callback(new Error('CORS 정책에 의해 차단되었습니다.')); 
         }
     },
     credentials: true

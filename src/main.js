@@ -62,12 +62,21 @@ class AirSwingApp {
             // 0. 서버에서 게임 설정(아이템 등) 가져오기
             this.ui.updateProgress(20, '서버 설정 동기화 중...');
             try {
-                const response = await fetch('/api/game/config');
+                // 3초 타임아웃 추가
+                const fetchWithTimeout = (url, ms) => {
+                    return Promise.race([
+                        fetch(url),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), ms))
+                    ]);
+                };
+
+                const response = await fetchWithTimeout('/api/game/config', 3000); // 3초 제한
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const config = await response.json();
                 console.log('Server Config Loaded:', config);
                 this.applyServerConfig(config);
             } catch (err) {
-                console.warn('서버 설정 로드 실패, 기본값 사용', err);
+                console.warn('서버 설정 로드 실패 (타임아웃/오류), 기본값 사용', err);
             }
 
             // 1. 지형 데이터 로드 (Physics보다 먼저)

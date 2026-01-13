@@ -12,7 +12,8 @@ export class TerrainManager {
             [TerrainType.FAIRWAY]: null, // Uint8Array
             [TerrainType.ROUGH]: null,
             [TerrainType.WATER]: null,
-            [TerrainType.OB]: null
+            [TerrainType.OB]: null,
+            [TerrainType.BUNKER]: null // 벙커 추가
         };
 
         this.isLoaded = false;
@@ -29,6 +30,7 @@ export class TerrainManager {
             this.masks[TerrainType.ROUGH] = await this.loadImageData('./assets/terrain/mask_rough.png');
             this.masks[TerrainType.WATER] = await this.loadImageData('./assets/terrain/mask_water.png');
             this.masks[TerrainType.OB] = await this.loadImageData('./assets/terrain/mask_ob.png');
+            this.masks[TerrainType.BUNKER] = await this.loadImageData('./assets/terrain/mask_bunker.png');
 
             this.isLoaded = true;
             console.log('지형 데이터 로딩 완료');
@@ -38,28 +40,45 @@ export class TerrainManager {
         }
     }
 
-    // 이미지 파일을 픽셀 데이터로 변환 (Canvas 사용)
+    // 이미지 파일을 픽셀 데이터로 변환 (Canvas 사용) - 타임아웃 적용 버전
     loadImageData(url) {
-        return new Promise((resolve, reject) => {
+        return new Promise((resolve) => {
             const img = new Image();
             img.crossOrigin = 'Anonymous';
+
+            // 1.5초 타임아웃 (이미지가 없거나 로딩이 너무 길어지면 무시)
+            const timer = setTimeout(() => {
+                console.warn(`Terrain Load Timeout: ${url}`);
+                resolve(null);
+            }, 1500);
+
             img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = this.imageSize; // 강제 리사이징 or img.width
-                canvas.height = this.imageSize;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(img, 0, 0, this.imageSize, this.imageSize);
+                clearTimeout(timer);
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = this.imageSize; // 강제 리사이징 or img.width
+                    canvas.height = this.imageSize;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, this.imageSize, this.imageSize);
 
-                // 흑백 데이터만 필요하므로 Red 채널만 사용
-                const imgData = ctx.getImageData(0, 0, this.imageSize, this.imageSize);
-                const data = new Uint8Array(this.imageSize * this.imageSize);
+                    // 흑백 데이터만 필요하므로 Red 채널만 사용
+                    const imgData = ctx.getImageData(0, 0, this.imageSize, this.imageSize);
+                    const data = new Uint8Array(this.imageSize * this.imageSize);
 
-                for (let i = 0; i < data.length; i++) {
-                    data[i] = imgData.data[i * 4]; // R channel
+                    for (let i = 0; i < data.length; i++) {
+                        data[i] = imgData.data[i * 4]; // R channel
+                    }
+                    resolve(data);
+                } catch (e) {
+                    console.error('Image Process Error:', e);
+                    resolve(null);
                 }
-                resolve(data);
             };
-            img.onerror = (e) => reject(e);
+            img.onerror = (e) => {
+                clearTimeout(timer);
+                console.warn(`Image Load Failed: ${url}`);
+                resolve(null);
+            };
             img.src = url;
         });
     }
@@ -105,7 +124,7 @@ export class TerrainManager {
 
         if (this.masks[TerrainType.OB] && this.masks[TerrainType.OB][index] > THRESHOLD) return TerrainType.OB;
         if (this.masks[TerrainType.WATER] && this.masks[TerrainType.WATER][index] > THRESHOLD) return TerrainType.WATER;
-        if (this.masks[TerrainType.BUNKER] && this.masks[TerrainType.BUNKER][index] > THRESHOLD) return TerrainType.BUNKER; // 벙커 판정
+        if (this.masks[TerrainType.BUNKER] && this.masks[TerrainType.BUNKER][index] > THRESHOLD) return TerrainType.BUNKER;
         if (this.masks[TerrainType.FAIRWAY] && this.masks[TerrainType.FAIRWAY][index] > THRESHOLD) return TerrainType.FAIRWAY;
         if (this.masks[TerrainType.ROUGH] && this.masks[TerrainType.ROUGH][index] > THRESHOLD) return TerrainType.ROUGH;
 
