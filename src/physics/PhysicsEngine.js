@@ -198,14 +198,20 @@ export class PhysicsEngine {
         const px = origin.x();
         const pz = origin.z();
 
-        // 1. Check Course Areas (Priority: OB > Hazard > Green)
+        // 1. TerrainManager (Mask Based) Check
+        if (this.app.terrainManager && this.app.terrainManager.isLoaded) {
+            const terrainData = this.app.terrainManager.getPhysicsParams(px, pz); // { type, friction, restitution }
+            return terrainData;
+        }
+
+        // 2. Fallback: Course Areas (Priority: OB > Hazard > Green)
         for (const area of this.courseAreas) {
             if (this.isPointInPolygon([px, pz], area.polygon)) {
                 return area;
             }
         }
 
-        // 2. Legacy/Simple Bounds checks for Fairway/Rough
+        // 3. Fallback: Simple Bounds
         if (Math.abs(px) < 30) {
             return { type: this.AreaType.FAIRWAY, friction: 0.5, restitution: 0.3 };
         }
@@ -219,19 +225,27 @@ export class PhysicsEngine {
 
             // 실시간 상태 체크 및 물리 속성 반영
             const statusData = this.checkBallStatus();
-
-            // Apply Physics Properties found in Area Data
-            if (statusData.friction !== undefined) this.ball.setFriction(statusData.friction);
-            if (statusData.restitution !== undefined) this.ball.setRestitution(statusData.restitution);
-
-            // 특수 지형 감속 로직
             const type = statusData.type;
-            if (type === this.AreaType.BUNKER || type === this.AreaType.PENALTY_WATER) {
+
+            // Apply Physics Properties
+            const friction = statusData.friction !== undefined ? statusData.friction : 0.5;
+            const restitution = statusData.restitution !== undefined ? statusData.restitution : 0.3;
+
+            this.ball.setFriction(friction);
+            this.ball.setRestitution(restitution);
+
+            // 특수 지형 로직 (속도 감속 등)
+            if (type === this.AreaType.BUNKER) {
+                // 벙커: 매우 급격한 감속
                 const vel = this.ball.getLinearVelocity();
-                vel.multiplyScalar(0.9); // 강한 감쇠
+                vel.multiplyScalar(0.92);
+                this.ball.setLinearVelocity(vel);
+            } else if (type === this.AreaType.PENALTY_WATER) {
+                // 물: 멈춤
+                const vel = this.ball.getLinearVelocity();
+                vel.multiplyScalar(0.5);
                 this.ball.setLinearVelocity(vel);
             } else if (type === this.AreaType.GREEN) {
-                // 그린 위에서는 구름 마찰(Rolling Friction) 중요 & 경사
                 this.updatePuttingPhysics(dt);
             }
         }

@@ -7,6 +7,7 @@ import { PhysicsEngine } from './physics/PhysicsEngine.js';
 import { MotionEngine } from './vision/MotionEngine.js';
 import { AudioService } from './services/AudioService.js';
 import { SyncService } from './services/SyncService.js';
+import { TerrainManager } from './game/TerrainManager.js';
 
 class AirSwingApp {
     constructor() {
@@ -15,7 +16,8 @@ class AirSwingApp {
         this.clubs = new ClubSelector(this.ui);
         this.minimap = new Minimap('minimap');
         this.scene = new SceneManager(this, 'game-canvas');
-        this.physics = new PhysicsEngine(this);
+        this.terrainManager = new TerrainManager(this.scene); // 지형 매니저 생성
+        this.physics = new PhysicsEngine(this); // physics가 app.terrainManager 접근 가능하도록 수정됨
         this.vision = new MotionEngine(
             this,
             document.getElementById('input-video'),
@@ -68,7 +70,11 @@ class AirSwingApp {
                 console.warn('서버 설정 로드 실패, 기본값 사용', err);
             }
 
-            // 1. Ammo.js 비동기 로딩 및 물리 엔진 초기화
+            // 1. 지형 데이터 로드 (Physics보다 먼저)
+            this.ui.updateProgress(25, '골프장 지형 및 마스크 로딩 중...');
+            await this.terrainManager.init();
+
+            // 2. Ammo.js 비동기 로딩 및 물리 엔진 초기화
             this.ui.updateProgress(30, '물리 엔진 시스템(Ammo.js) 준비 중...');
             await this.physics.init(); // 내부에서 await Ammo() 수행
 
