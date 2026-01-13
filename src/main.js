@@ -284,201 +284,198 @@ class AirSwingApp {
             }
 
             this.pollSessionStatus(sessionId);
-        }
-
-            this.pollSessionStatus(sessionId);
-    } catch(e) {
-        console.error('Session Create Failed:', e);
-        const errEl = document.getElementById('session-code-text');
-        if (errEl) {
-            errEl.innerText = 'FAIL';
-            errEl.style.fontSize = '14px';
-            errEl.innerHTML += `<br><span style="font-size:10px; color:red">${e.message}</span>`;
-        }
-    }
-}
-
-    async pollSessionStatus(sessionId) {
-    if (this.state !== 'waiting_login') return;
-
-    try {
-        const res = await fetch(`/api/auth/session/check?sessionId=${sessionId}`);
-        const data = await res.json();
-
-        if (data.status === 'connected') {
-            this.userId = data.userId;
-            this.sync.userId = data.userId; // Sync 모듈에도 ID 전달
-            this.ui.showNotification('모바일 앱과 연결되었습니다! 🔗');
-            // 장착 아이템 등 로드
-            this.sync.loadGameConfig();
-
-            // 로그인 오버레이 숨김 및 게임 시작
-            document.getElementById('login-overlay').style.display = 'none';
-            this.setGameState('address');
-        } else {
-            setTimeout(() => this.pollSessionStatus(sessionId), 2000); // 2초 주기 폴링
-        }
-    } catch (e) {
-        console.error('Session Poll Error:', e);
-        setTimeout(() => this.pollSessionStatus(sessionId), 5000);
-    }
-}
-
-setGameState(newState) {
-    this.state = newState;
-    this.ui.setMode(newState);
-
-    if (newState === 'ready') {
-        this.audio.announceShot('ready');
-    } else if (newState === 'flight') {
-        this.scene.setCameraMode('follow');
-        this.audio.announceShot('impact');
-    } else if (newState === 'result') {
-        const status = this.physics.checkBallStatus();
-        const totalDist = this.physics.ball ? this.physics.ball.position.z * -1 : 0;
-
-        // 코인 보상 계산
-        let reward = 100; // 기본 참가 보상
-        if (totalDist > 250) reward += 200; // 장타 보상
-        if (status === 'FAIRWAY') reward += 100;
-
-        // 앱으로 보상 및 샷 데이터 전송
-        this.sync.updateShotData({
-            distance: totalDist,
-            ballSpeed: 65 + Math.random() * 10,
-            launchAngle: 12 + Math.random() * 4,
-            rewardCoins: reward,
-            timestamp: Date.now()
-        });
-
-        this.ui.showNotification(`${reward} G-Coin 획득! 🪙`);
-
-        if (status === 'FAIRWAY') this.audio.announceShot('good');
-        else if (status === 'BUNKER') this.audio.announceShot('bunker');
-        else if (status === 'WATER') this.audio.announceShot('hazard');
-        else if (status === 'OB') this.audio.announceShot('ob');
-    }
-
-    console.log(`[GameState] -> ${newState}`);
-}
-
-togglePuttingMode(isPutting) {
-    const gauge = document.getElementById('putter-gauge');
-    if (isPutting) {
-        gauge.classList.remove('hidden');
-        if (this.state !== 'flight') this.setGameState('putting');
-    } else {
-        gauge.classList.add('hidden');
-        if (this.state === 'putting') this.setGameState('address');
-    }
-}
-
-// --- Event Handlers for Sync ---
-onInventoryUpdate(data) {
-    this.inventory.currentBall = data.equippedBall;
-    const ballData = this.inventory.balls[data.equippedBall];
-    if (this.scene && ballData) {
-        this.scene.setBallType(ballData);
-        this.audio.playEffect('click');
-    }
-}
-
-onGameCommand(data) {
-    if (data.command === 'mulligan') {
-        this.setGameState('address');
-        this.scene.initBall(); // 공 리셋
-        this.physics.resetBall(); // 물리 리셋
-        this.ui.showNotification('멀리건 사용됨! (다시 치세요)');
-    } else if (data.command === 'camera') {
-        this.scene.setCameraMode(data.mode);
-    } else if (data.command === 'aim') {
-        this.scene.rotateAim(data.dir);
-    } else if (data.command === 'club') {
-        this.clubs.setClub(data.value);
-        this.ui.showNotification(`클럽 변경: ${data.value}`);
-    }
-}
-
-onCameraChange(data) {
-    this.scene.setCameraMode(data.mode);
-}
-
-onEnvUpdate(data) {
-    if (data.type === 'wind') {
-        this.physics.setWind(data.value);
-        this.ui.showNotification(`바람 세기 변경: ${data.value}m/s`);
-    }
-}
-
-onCaddyUpdate(data) {
-    if (this.audio) {
-        this.audio.setVoice(data.voice);
-        this.ui.showNotification('캐디 목소리 변경됨');
-    }
-}
-
-onGodMode(data) {
-    if (data.enabled) {
-        // Physics Hack: Low Gravity
-        if (this.physics.world) {
-            this.physics.world.setGravity(new Ammo.btVector3(0, -3.0, 0)); // Moon Gravity (ish)
-        }
-        // Visual Hack: Golden Hour
-        if (this.scene.sun) {
-            this.scene.sun.color.setHex(0xffaa00);
-            this.scene.sun.intensity = 5.0;
-        }
-        this.audio.playEffect('powerup'); // Assuming you have this or generic sound
-        console.log('⚡ GOD MODE ENABLED');
-    }
-}
-
-startLoop() {
-    const animate = (time) => {
-        const dt = (time - this.lastTime) / 1000;
-        this.lastTime = time;
-
-        requestAnimationFrame(animate);
-
-        // 1. 물리 시뮬레이션 (공이 움직이는 상태일 때만)
-        if (this.state === 'flight' || this.state === 'putting') {
-            this.physics.update(dt);
-            this.checkHoleIn(); // Check if ball enters hole
-
-            // 공의 물리 상태를 렌더링 엔진으로 동기화
-            if (this.physics.ball) {
-                const transform = new Ammo.btTransform();
-                this.physics.ball.getMotionState().getWorldTransform(transform);
-                const origin = transform.getOrigin();
-                const rotation = transform.getRotation();
-
-                this.scene.updateBall(
-                    { x: origin.x(), y: origin.y(), z: origin.z() },
-                    { x: rotation.x(), y: rotation.y(), z: rotation.z(), w: rotation.w() }
-                );
-
-                // 1.1 샷 종료 체크 (공이 정지했는지)
-                const vel = this.physics.ball.getLinearVelocity();
-                const speed = Math.sqrt(vel.x() ** 2 + vel.y() ** 2 + vel.z() ** 2);
-
-                if (speed < 0.1 && time > (this.shotStartTime + 1000)) {
-                    const finalDistance = Math.abs(origin.z()); // 출발점이 0,0,0 가정
-                    this.handleShotComplete(finalDistance);
-                }
+        } catch (e) {
+            console.error('Session Create Failed:', e);
+            const errEl = document.getElementById('session-code-text');
+            if (errEl) {
+                errEl.innerText = 'FAIL';
+                errEl.style.fontSize = '14px';
+                errEl.innerHTML += `<br><span style="font-size:10px; color:red">${e.message}</span>`;
             }
         }
+    }
 
-        // 2. 그래픽 렌더링 (Three.js)
-        this.scene.render();
+    async pollSessionStatus(sessionId) {
+        if (this.state !== 'waiting_login') return;
 
-        // 3. 미니맵 & HUD 업데이트
-        this.minimap.draw({
-            ballPos: this.scene.ballMesh ? this.scene.ballMesh.position : { x: 0, y: 0 },
-            wind: this.env.state
-        });
-    };
-    animate(performance.now());
-}
+        try {
+            const res = await fetch(`/api/auth/session/check?sessionId=${sessionId}`);
+            const data = await res.json();
+
+            if (data.status === 'connected') {
+                this.userId = data.userId;
+                this.sync.userId = data.userId; // Sync 모듈에도 ID 전달
+                this.ui.showNotification('모바일 앱과 연결되었습니다! 🔗');
+                // 장착 아이템 등 로드
+                this.sync.loadGameConfig();
+
+                // 로그인 오버레이 숨김 및 게임 시작
+                document.getElementById('login-overlay').style.display = 'none';
+                this.setGameState('address');
+            } else {
+                setTimeout(() => this.pollSessionStatus(sessionId), 2000); // 2초 주기 폴링
+            }
+        } catch (e) {
+            console.error('Session Poll Error:', e);
+            setTimeout(() => this.pollSessionStatus(sessionId), 5000);
+        }
+    }
+
+    setGameState(newState) {
+        this.state = newState;
+        this.ui.setMode(newState);
+
+        if (newState === 'ready') {
+            this.audio.announceShot('ready');
+        } else if (newState === 'flight') {
+            this.scene.setCameraMode('follow');
+            this.audio.announceShot('impact');
+        } else if (newState === 'result') {
+            const status = this.physics.checkBallStatus();
+            const totalDist = this.physics.ball ? this.physics.ball.position.z * -1 : 0;
+
+            // 코인 보상 계산
+            let reward = 100; // 기본 참가 보상
+            if (totalDist > 250) reward += 200; // 장타 보상
+            if (status === 'FAIRWAY') reward += 100;
+
+            // 앱으로 보상 및 샷 데이터 전송
+            this.sync.updateShotData({
+                distance: totalDist,
+                ballSpeed: 65 + Math.random() * 10,
+                launchAngle: 12 + Math.random() * 4,
+                rewardCoins: reward,
+                timestamp: Date.now()
+            });
+
+            this.ui.showNotification(`${reward} G-Coin 획득! 🪙`);
+
+            if (status === 'FAIRWAY') this.audio.announceShot('good');
+            else if (status === 'BUNKER') this.audio.announceShot('bunker');
+            else if (status === 'WATER') this.audio.announceShot('hazard');
+            else if (status === 'OB') this.audio.announceShot('ob');
+        }
+
+        console.log(`[GameState] -> ${newState}`);
+    }
+
+    togglePuttingMode(isPutting) {
+        const gauge = document.getElementById('putter-gauge');
+        if (isPutting) {
+            gauge.classList.remove('hidden');
+            if (this.state !== 'flight') this.setGameState('putting');
+        } else {
+            gauge.classList.add('hidden');
+            if (this.state === 'putting') this.setGameState('address');
+        }
+    }
+
+    // --- Event Handlers for Sync ---
+    onInventoryUpdate(data) {
+        this.inventory.currentBall = data.equippedBall;
+        const ballData = this.inventory.balls[data.equippedBall];
+        if (this.scene && ballData) {
+            this.scene.setBallType(ballData);
+            this.audio.playEffect('click');
+        }
+    }
+
+    onGameCommand(data) {
+        if (data.command === 'mulligan') {
+            this.setGameState('address');
+            this.scene.initBall(); // 공 리셋
+            this.physics.resetBall(); // 물리 리셋
+            this.ui.showNotification('멀리건 사용됨! (다시 치세요)');
+        } else if (data.command === 'camera') {
+            this.scene.setCameraMode(data.mode);
+        } else if (data.command === 'aim') {
+            this.scene.rotateAim(data.dir);
+        } else if (data.command === 'club') {
+            this.clubs.setClub(data.value);
+            this.ui.showNotification(`클럽 변경: ${data.value}`);
+        }
+    }
+
+    onCameraChange(data) {
+        this.scene.setCameraMode(data.mode);
+    }
+
+    onEnvUpdate(data) {
+        if (data.type === 'wind') {
+            this.physics.setWind(data.value);
+            this.ui.showNotification(`바람 세기 변경: ${data.value}m/s`);
+        }
+    }
+
+    onCaddyUpdate(data) {
+        if (this.audio) {
+            this.audio.setVoice(data.voice);
+            this.ui.showNotification('캐디 목소리 변경됨');
+        }
+    }
+
+    onGodMode(data) {
+        if (data.enabled) {
+            // Physics Hack: Low Gravity
+            if (this.physics.world) {
+                this.physics.world.setGravity(new Ammo.btVector3(0, -3.0, 0)); // Moon Gravity (ish)
+            }
+            // Visual Hack: Golden Hour
+            if (this.scene.sun) {
+                this.scene.sun.color.setHex(0xffaa00);
+                this.scene.sun.intensity = 5.0;
+            }
+            this.audio.playEffect('powerup'); // Assuming you have this or generic sound
+            console.log('⚡ GOD MODE ENABLED');
+        }
+    }
+
+    startLoop() {
+        const animate = (time) => {
+            const dt = (time - this.lastTime) / 1000;
+            this.lastTime = time;
+
+            requestAnimationFrame(animate);
+
+            // 1. 물리 시뮬레이션 (공이 움직이는 상태일 때만)
+            if (this.state === 'flight' || this.state === 'putting') {
+                this.physics.update(dt);
+                this.checkHoleIn(); // Check if ball enters hole
+
+                // 공의 물리 상태를 렌더링 엔진으로 동기화
+                if (this.physics.ball) {
+                    const transform = new Ammo.btTransform();
+                    this.physics.ball.getMotionState().getWorldTransform(transform);
+                    const origin = transform.getOrigin();
+                    const rotation = transform.getRotation();
+
+                    this.scene.updateBall(
+                        { x: origin.x(), y: origin.y(), z: origin.z() },
+                        { x: rotation.x(), y: rotation.y(), z: rotation.z(), w: rotation.w() }
+                    );
+
+                    // 1.1 샷 종료 체크 (공이 정지했는지)
+                    const vel = this.physics.ball.getLinearVelocity();
+                    const speed = Math.sqrt(vel.x() ** 2 + vel.y() ** 2 + vel.z() ** 2);
+
+                    if (speed < 0.1 && time > (this.shotStartTime + 1000)) {
+                        const finalDistance = Math.abs(origin.z()); // 출발점이 0,0,0 가정
+                        this.handleShotComplete(finalDistance);
+                    }
+                }
+            }
+
+            // 2. 그래픽 렌더링 (Three.js)
+            this.scene.render();
+
+            // 3. 미니맵 & HUD 업데이트
+            this.minimap.draw({
+                ballPos: this.scene.ballMesh ? this.scene.ballMesh.position : { x: 0, y: 0 },
+                wind: this.env.state
+            });
+        };
+        animate(performance.now());
+    }
 }
 
 window.addEventListener('DOMContentLoaded', () => {
